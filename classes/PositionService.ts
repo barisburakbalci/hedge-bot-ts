@@ -41,13 +41,14 @@ class PositionService {
                 return;
             } else if (this.isInitialState && positionSize > 0) {
                 this.isInitialState = false;
+                await this.Exchange.setTPSL('BUY', this.minPrice, this.maxPrice);
+                await this.Exchange.setTPSL('SELL', this.minPrice, this.maxPrice);
             }
 
             const openOrderCount = (await this.Exchange.getOpenOrders()).length;
             if (!openOrderCount) {
                 const nextSide = this.getNextPositionSide();
                 await this.createNextOrder(nextSide);
-                await this.Exchange.setTPSL(nextSide, this.minPrice, this.maxPrice);
             }
         } else {
             await this.setPositionRange();
