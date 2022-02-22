@@ -16,15 +16,15 @@ class PositionService {
     isStarted= false;
     openOrders: IOrder[];
     position: IPosition;
-    volatility: number;
+    tradeRange: number;
     initialQuantity: number;
     quantity: number;
     orderIteration = 1;
     lastSide: Side = 'SELL';
 
-    constructor(Exchange: IExchangeApi, NotificationService: TelegramBot, volatility: number, initialQuantity: number) {
+    constructor(Exchange: IExchangeApi, NotificationService: TelegramBot, tradeRange: number, initialQuantity: number) {
         this.Exchange = Exchange;
-        this.volatility = volatility;
+        this.tradeRange = tradeRange;
         this.initialQuantity = initialQuantity;
         this.quantity = initialQuantity;
         this.NofiticationService = NotificationService;
@@ -57,10 +57,10 @@ class PositionService {
     async setPositionRange(): Promise<void> {
         const price = await this.Exchange.getMarkPrice();
 
-        this.longActionPrice    = Math.floor(price * (1 + this.volatility / 6));
-        this.shortActionPrice   = Math.floor(price * (1 - this.volatility / 6));
-        this.maxPrice           = Math.floor(price * (1 + this.volatility));
-        this.minPrice           = Math.floor(price * (1 - this.volatility));
+        this.longActionPrice    = Math.floor(price * (1 + this.tradeRange / 6));
+        this.shortActionPrice   = Math.floor(price * (1 - this.tradeRange / 6));
+        this.maxPrice           = Math.floor(price * (1 + this.tradeRange));
+        this.minPrice           = Math.floor(price * (1 - this.tradeRange));
 
         Logger.LogInfo(`Initial orders were set with amount: ${this.initialQuantity / 2} ${this.Exchange.symbol}`);
         let message = `${this.Exchange.symbol} <b>${price}</b>`;
@@ -69,7 +69,7 @@ class PositionService {
         message += `\n<i>SellAt:</i> ${this.shortActionPrice}`;
         message += `\n<i>UpLimit:</i> ${this.maxPrice}`;
         message += `\n<i>DownLimit:</i> ${this.minPrice}`;
-        message += `\n<i>Range:</i> %${this.volatility * 200}`;
+        message += `\n<i>Range:</i> %${this.tradeRange * 200}`;
         message = message;
 
         this.NofiticationService.sendMessage(message);

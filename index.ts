@@ -1,11 +1,11 @@
 import Binance from './classes/Binance';
 import PositionService from './classes/PositionService';
 import TelegramBot from './classes/TelegramBot';
-import Credentials from './Credentials';
+import Settings from './Settings';
 
-const binanceAPI = new Binance(Credentials.binanceApiKey, Credentials.binanceApiSecret, 'BTCUSDT', 2);
-const telegramBot = new TelegramBot(Credentials.telegramToken, Credentials.telegramChannel);
-const positionService = new PositionService(binanceAPI, telegramBot, 0.02, 0.02);
+const binanceAPI = new Binance(Settings.binanceApiKey, Settings.binanceApiSecret, 'BTCUSDT', 2);
+const telegramBot = new TelegramBot(Settings.telegramToken, Settings.telegramChannel);
+const positionService = new PositionService(binanceAPI, telegramBot, Settings.tradeRange, Settings.startingQuantity);
 let locked = false;
 console.log('-'.repeat(10), 'HedgeBot is running', '-'.repeat(10));
 
