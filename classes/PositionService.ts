@@ -39,10 +39,7 @@ class PositionService {
                 this.isStarted = false;
                 console.log('-'.repeat(10), 'HedgeBot is restarted', '-'.repeat(10));
                 return;
-            }
-
-            if (this.isInitialState && positionSize > 0) {
-                //await this.Exchange.cancelAllOrders();
+            } else if (this.isInitialState && positionSize > 0) {
                 this.isInitialState = false;
             }
 
@@ -65,7 +62,7 @@ class PositionService {
         this.maxPrice           = Math.floor(price * (1 + this.volatility));
         this.minPrice           = Math.floor(price * (1 - this.volatility));
 
-        Logger.LogInfo(`Initial orders were set with amount: ${this.initialQuantity} ${this.Exchange.symbol}`);
+        Logger.LogInfo(`Initial orders were set with amount: ${this.initialQuantity / 2} ${this.Exchange.symbol}`);
         let message = `${this.Exchange.symbol} <b>${price}</b>`;
         message += '\nInitail orders set for:';
         message += `\n<i>BuyAt:</i> ${this.longActionPrice}`;
@@ -82,7 +79,7 @@ class PositionService {
 
         //const initialBuyOrder = await this.Exchange.openStopOrder('BUY', this.quantity, this.longActionPrice);
         //const initialSellOrder = await this.Exchange.openStopOrder('SELL', this.quantity, this.shortActionPrice);
-        const initialStartOrder = await this.Exchange.openMarketOrder(this.lastSide, this.quantity);
+        const initialStartOrder = await this.Exchange.openMarketOrder(this.lastSide, this.quantity / 2);
 
         if (initialStartOrder) {
             this.isInitialState = true;
