@@ -51,8 +51,8 @@ class PositionService {
                 return;
             } else if (this.isInitialState && positionSize > 0) {
                 this.isInitialState = false;
-                await this.Exchange.setTPSL('BUY', this.maxPrice, this.minPrice);
-                await this.Exchange.setTPSL('SELL', this.minPrice, this.maxPrice);
+                await this.Exchange.setTPSL('BUY', this.minPrice, this.maxPrice);
+                await this.Exchange.setTPSL('SELL', this.maxPrice, this.minPrice);
                 const balanceInfo = await this.Exchange.getBalance();
                 this.balance = balanceInfo.balance;
             }
@@ -66,9 +66,9 @@ class PositionService {
             if (this.position.notional / 50 > this.balance / 2) {
                 await this.Exchange.cancelAllOrders();
                 if (nextSide == 'BUY') {
-                    await this.Exchange.setTPSL('SELL', this.minPrice, Math.floor((this.maxPrice + this.minPrice) / 2));
+                    await this.Exchange.setTPSL('SELL', this.maxPrice, Math.floor((this.maxPrice + this.minPrice) / 2));
                 } else {
-                    await this.Exchange.setTPSL('BUY', this.maxPrice, Math.floor((this.maxPrice + this.minPrice) / 2));
+                    await this.Exchange.setTPSL('BUY', this.minPrice, Math.floor((this.maxPrice + this.minPrice) / 2));
                 }
                 
                 this.protectLoss = true;
@@ -76,7 +76,7 @@ class PositionService {
             }
 
             const openOrderCount = (await this.Exchange.getOpenOrders()).length;
-            
+
             if (!openOrderCount) {
                 await this.createNextOrder(nextSide);
             }
