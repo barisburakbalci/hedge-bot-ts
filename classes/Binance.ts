@@ -73,16 +73,10 @@ class Binance implements IExchangeApi {
         const order = new Order(side, 'MARKET', quantity);
         return await this._getDataFrom('POST', 'order', 'v1', order.toRecord()) as IOrder;
     }
-    async setTPSL(side: Side, min: number, max: number): Promise<void> {
-        if (side === 'BUY') {
-            const tempPrice = min;
-            min = max;
-            max = tempPrice;
-        }
-
+    async setTPSL(side: Side, TP: number, SL: number): Promise<void> {
         const orders = [
-            new Order(side, 'STOP_MARKET', null, null, min, true),
-            new Order(side, 'TAKE_PROFIT_MARKET', null, null, max, true),
+            new Order(side, 'STOP_MARKET', null, null, SL, true),
+            new Order(side, 'TAKE_PROFIT_MARKET', null, null, TP, true),
         ];
 
         for (const order of orders) {

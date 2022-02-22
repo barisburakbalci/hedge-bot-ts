@@ -14,7 +14,7 @@ interface IExchangeApi {
     openStopOrder(side: Side, quantity: number, price: number): Promise<IOrder>;
     openStopMarketOrder(side: Side, quantity: number, stopPrice: number): Promise<IOrder>;
     openMarketOrder(side: Side, quantity: number): Promise<IOrder>
-    setTPSL(side: Side, min: number, max: number): Promise<void>;
+    setTPSL(side: Side, TP: number, SL: number): Promise<void>;
     cancelAllOrders(): Promise<boolean>;
     cancelOrder(orderId: string, side: Side): Promise<boolean>;
 }

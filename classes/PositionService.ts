@@ -22,6 +22,7 @@ class PositionService {
     orderIteration = 1;
     lastSide: Side = 'SELL';
     balance: number = 0;
+    protectLoss: boolean = false;
 
     constructor(Exchange: IExchangeApi, NotificationService: TelegramBot, tradeRange: number, initialQuantity: number) {
         this.Exchange = Exchange;
@@ -50,15 +51,33 @@ class PositionService {
                 return;
             } else if (this.isInitialState && positionSize > 0) {
                 this.isInitialState = false;
-                await this.Exchange.setTPSL('BUY', this.minPrice, this.maxPrice);
+                await this.Exchange.setTPSL('BUY', this.maxPrice, this.minPrice);
                 await this.Exchange.setTPSL('SELL', this.minPrice, this.maxPrice);
                 const balanceInfo = await this.Exchange.getBalance();
                 this.balance = balanceInfo.balance;
             }
 
+            if (this.protectLoss) {
+                return;
+            }
+
+            const nextSide = this.getNextPositionSide();
+
+            if (this.position.notional / 50 > this.balance / 2) {
+                await this.Exchange.cancelAllOrders();
+                if (nextSide == 'BUY') {
+                    await this.Exchange.setTPSL('SELL', this.minPrice, Math.floor((this.maxPrice + this.minPrice) / 2));
+                } else {
+                    await this.Exchange.setTPSL('BUY', this.maxPrice, Math.floor((this.maxPrice + this.minPrice) / 2));
+                }
+                
+                this.protectLoss = true;
+                return;
+            }
+
             const openOrderCount = (await this.Exchange.getOpenOrders()).length;
+            
             if (!openOrderCount) {
-                const nextSide = this.getNextPositionSide();
                 await this.createNextOrder(nextSide);
             }
         } else {
@@ -97,6 +116,7 @@ class PositionService {
             this.isInitialState = true;
             this.isStarted = true;
             this.orderIteration = 1;
+            this.protectLoss = false;
         }
     }
 
