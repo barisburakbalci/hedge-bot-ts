@@ -1,11 +1,13 @@
 import IOrder from './IOrder';
 import IPosition from './IPosition';
 import { HttpMethod, ApiVersion, Side } from '../Enums';
+import IBalance from './IBalance';
 
 interface IExchangeApi {
     baseURL: string;
     symbol: string;
     _getDataFrom(httpMethod: HttpMethod, apiEndpoint: string, version: ApiVersion, params: Record<string, string>): Object;
+    getBalance(): Promise<IBalance>;
     getMarkPrice(): Promise<number>;
     getOpenOrders(): Promise<Array<IOrder>>;
     getPosition(): Promise<IPosition>;

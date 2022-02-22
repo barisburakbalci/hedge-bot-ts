@@ -6,6 +6,7 @@ import IOrder from '../interfaces/IOrder';
 import IPosition from '../interfaces/IPosition';
 import Order from './Order';
 import Logger from './Logger';
+import IBalance from '../interfaces/IBalance';
 
 class Binance implements IExchangeApi {
     baseURL = 'https://fapi.binance.com/fapi';
@@ -39,6 +40,10 @@ class Binance implements IExchangeApi {
             Logger.LogError(error?.response?.data?.msg, error);
             return;
         }
+    }
+    async getBalance(): Promise<IBalance> {
+        const balances = await this._getDataFrom('GET', 'balance', 'v2') as IBalance[];
+        return balances.find(balance => balance.asset == 'USDT');
     }
     async getMarkPrice(): Promise<number> {
         interface MarkPriceResponse {

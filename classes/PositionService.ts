@@ -21,6 +21,7 @@ class PositionService {
     quantity: number;
     orderIteration = 1;
     lastSide: Side = 'SELL';
+    balance: number = 0;
 
     constructor(Exchange: IExchangeApi, NotificationService: TelegramBot, tradeRange: number, initialQuantity: number) {
         this.Exchange = Exchange;
@@ -37,12 +38,22 @@ class PositionService {
 
             if (!this.isInitialState && positionSize == 0) {
                 this.isStarted = false;
-                console.log('-'.repeat(10), 'HedgeBot is restarted', '-'.repeat(10));
+
+                const balanceInfo = await this.Exchange.getBalance();
+                const profit = balanceInfo.balance - this.balance;
+                this.balance = balanceInfo.balance;
+
+                this.NofiticationService.sendMessage('Realized profit: $' + profit);
+                Logger.LogInfo('Realized profit: $' + profit);
+
+                Logger.LogInfo('-'.repeat(10) + ' HedgeBot is restarted ' + '-'.repeat(10));
                 return;
             } else if (this.isInitialState && positionSize > 0) {
                 this.isInitialState = false;
                 await this.Exchange.setTPSL('BUY', this.minPrice, this.maxPrice);
                 await this.Exchange.setTPSL('SELL', this.minPrice, this.maxPrice);
+                const balanceInfo = await this.Exchange.getBalance();
+                this.balance = balanceInfo.balance;
             }
 
             const openOrderCount = (await this.Exchange.getOpenOrders()).length;
