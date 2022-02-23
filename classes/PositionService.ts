@@ -23,6 +23,7 @@ class PositionService {
     lastSide: Side = 'SELL';
     balance: number = 0;
     protectLoss: boolean = false;
+    preserveNewPositions: boolean = true;
 
     constructor(Exchange: IExchangeApi, NotificationService: TelegramBot, tradeRange: number, initialQuantity: number) {
         this.Exchange = Exchange;
@@ -75,9 +76,13 @@ class PositionService {
                 return;
             }
 
-            const openOrderCount = (await this.Exchange.getOpenOrders()).length;
+            const openOrders = await this.Exchange.getOpenOrders();
 
-            if (!openOrderCount) {
+            if (openOrders.filter(order => order.price < 1001).length) {
+                this.preserveNewPositions = false;
+            }
+
+            if (!openOrders.length) {
                 await this.createNextOrder(nextSide);
             }
         } else {
@@ -86,6 +91,10 @@ class PositionService {
     }
 
     async setPositionRange(): Promise<void> {
+        if (!this.preserveNewPositions) {
+            process.exit(1);
+        }
+        
         const price = await this.Exchange.getMarkPrice();
 
         this.longActionPrice    = Math.floor(price * (1 + this.tradeRange / 6));
