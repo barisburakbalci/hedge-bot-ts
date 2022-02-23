@@ -97,8 +97,8 @@ class PositionService {
         
         const price = await this.Exchange.getMarkPrice();
 
-        this.longActionPrice    = Math.floor(price * (1 + this.tradeRange / 6));
-        this.shortActionPrice   = Math.floor(price * (1 - this.tradeRange / 6));
+        this.longActionPrice    = Math.floor(price * (1 + this.tradeRange / 4));
+        this.shortActionPrice   = Math.floor(price * (1 - this.tradeRange / 4));
         this.maxPrice           = Math.floor(price * (1 + this.tradeRange));
         this.minPrice           = Math.floor(price * (1 - this.tradeRange));
 
