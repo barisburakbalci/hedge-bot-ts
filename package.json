@@ -7,7 +7,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node ./node_modules/typescript/bin/tsc ./index.ts --outDir ./build && node ./build/index.js"
+    "start": "node ./node_modules/typescript/bin/tsc && node ./build/index.js"
   },
   "keywords": [],
   "author": "",

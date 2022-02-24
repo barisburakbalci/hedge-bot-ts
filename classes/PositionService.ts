@@ -4,18 +4,19 @@ import Logger from './Logger';
 import IOrder from '../interfaces/IOrder';
 import IPosition from '../interfaces/IPosition';
 import { Side } from '../Enums';
+import LimitOrder from './Orders/LimitOrder';
 
 class PositionService {
     Exchange: IExchangeApi;
     NofiticationService: TelegramBot;
-    longActionPrice: number;
-    shortActionPrice: number;
-    maxPrice: number;
-    minPrice: number;
+    longActionPrice: number = 0;
+    shortActionPrice: number = 0;
+    maxPrice: number = 0;
+    minPrice: number = 0;
     isInitialState = false;
     isStarted= false;
-    openOrders: IOrder[];
-    position: IPosition;
+    openOrders: IOrder[] = [];
+    position: IPosition = {} as IPosition;
     tradeRange: number;
     initialQuantity: number;
     quantity: number;
@@ -77,8 +78,9 @@ class PositionService {
             }
 
             const openOrders = await this.Exchange.getOpenOrders();
+            const protectionSignalOrder = openOrders.find(order => order instanceof LimitOrder) as LimitOrder;
 
-            if (openOrders.filter(order => order.price < 1001).length) {
+            if (protectionSignalOrder.price < this.minPrice) {
                 this.preserveNewPositions = false;
             }
 
@@ -117,8 +119,6 @@ class PositionService {
         await this.Exchange.cancelAllOrders();
         this.quantity = this.initialQuantity;
 
-        //const initialBuyOrder = await this.Exchange.openStopOrder('BUY', this.quantity, this.longActionPrice);
-        //const initialSellOrder = await this.Exchange.openStopOrder('SELL', this.quantity, this.shortActionPrice);
         const initialStartOrder = await this.Exchange.openMarketOrder(this.lastSide, this.quantity / 2);
 
         if (initialStartOrder) {

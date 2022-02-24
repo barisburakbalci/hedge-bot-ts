@@ -1,4 +1,5 @@
 import Binance from './classes/Binance';
+import Logger from './classes/Logger';
 import PositionService from './classes/PositionService';
 import TelegramBot from './classes/TelegramBot';
 import Settings from './Settings';
@@ -17,11 +18,8 @@ async function runHedgeBot() {
     locked = true;
     try {
         await positionService.run();
-    } catch (error) {
-        console.log('----------- General Error --------------');
-        console.log(new Date().toLocaleString());
-        console.error(error);
-        console.log('----------- /General Error --------------');
+    } catch (error: any) {
+        Logger.LogError(error?.response?.data?.msg, error);
     }
     locked = false;
 }

@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosError, HeadersDefaults } from 'axios';
 import * as crypto from 'crypto';
 import IExchangeApi from '../interfaces/IExchange';
 import { HttpMethod, ApiVersion, Side } from '../Enums';
@@ -7,6 +7,12 @@ import IPosition from '../interfaces/IPosition';
 import Order from './Order';
 import Logger from './Logger';
 import IBalance from '../interfaces/IBalance';
+import Utilities from './Utilities';
+import StopMarketOrder from './Orders/StopMarketOrder';
+import TakeProfitMarketOrder from './Orders/TakeProfitMarketOrder';
+import StopLossMarketOrder from './Orders/StopLossMarketOrder';
+import StopLimitOrder from './Orders/StopLimitOrder';
+import RequestService from './RequestService';
 
 class Binance implements IExchangeApi {
     baseURL = 'https://fapi.binance.com/fapi';
@@ -20,8 +26,9 @@ class Binance implements IExchangeApi {
         this.apiSecret = apiSecret;
         this.symbol = symbol;
         this.precision = precision;
-        axios.defaults.headers['Content-Type'] = 'application/x-www-form-urlencoded';
-        axios.defaults.headers['X-MBX-APIKEY'] = apiKey;
+
+        axios.defaults.headers.common['Content-Type'] = 'application/x-www-form-urlencoded';
+        axios.defaults.headers.common['X-MBX-APIKEY'] = apiKey;
     }
 
     async _getDataFrom(httpMethod: HttpMethod, apiEndpoint: string, version: ApiVersion, params: Record<string, string> = {}): Promise<Object> {
@@ -33,17 +40,12 @@ class Binance implements IExchangeApi {
         const queryString = new URLSearchParams(params).toString();
         const signature = crypto.createHmac('sha256', this.apiSecret).update(queryString).digest('hex');
 
-        try {
-            const { data } = await axios[httpMethod.toLowerCase()](URL + '?' + queryString + '&signature=' + signature);
-            return data;
-        } catch (error) {
-            Logger.LogError(error?.response?.data?.msg, error);
-            return;
-        }
+        const { data } = await RequestService.Send(httpMethod, URL + '?' + queryString + '&signature=' + signature);
+        return data;
     }
     async getBalance(): Promise<IBalance> {
         const balances = await this._getDataFrom('GET', 'balance', 'v2') as IBalance[];
-        return balances.find(balance => balance.asset == 'USDT');
+        return balances.find(balance => balance.asset == 'USDT') as IBalance;
     }
     async getMarkPrice(): Promise<number> {
         interface MarkPriceResponse {
@@ -62,25 +64,25 @@ class Binance implements IExchangeApi {
         return positions[0];
     }
     async openStopOrder(side: Side, quantity: number, price: number): Promise<IOrder> {
-        const order = new Order(side, 'STOP', quantity, price, price);
-        return await this._getDataFrom('POST', 'order', 'v1', order.toRecord()) as IOrder;
+        const order = new StopLimitOrder(side, quantity, price, price);
+        return await this._getDataFrom('POST', 'order', 'v1', Utilities.toRecord(order)) as IOrder;
     }
     async openStopMarketOrder(side: Side, quantity: number, stopPrice: number): Promise<IOrder> {
-        const order = new Order(side, 'STOP_MARKET', quantity, null, stopPrice);
-        return await this._getDataFrom('POST', 'order', 'v1', order.toRecord()) as IOrder;
+        const order = new StopMarketOrder(side, stopPrice, quantity);
+        return await this._getDataFrom('POST', 'order', 'v1', Utilities.toRecord(order)) as IOrder;
     }
     async openMarketOrder(side: Side, quantity: number): Promise<IOrder> {
         const order = new Order(side, 'MARKET', quantity);
-        return await this._getDataFrom('POST', 'order', 'v1', order.toRecord()) as IOrder;
+        return await this._getDataFrom('POST', 'order', 'v1', Utilities.toRecord(order)) as IOrder;
     }
     async setTPSL(side: Side, TP: number, SL: number): Promise<void> {
         const orders = [
-            new Order(side, 'STOP_MARKET', null, null, SL, true),
-            new Order(side, 'TAKE_PROFIT_MARKET', null, null, TP, true),
+            new StopLossMarketOrder(side, SL),
+            new TakeProfitMarketOrder(side, TP),
         ];
 
         for (const order of orders) {
-            await this._getDataFrom('POST', 'order', 'v1', order.toRecord());
+            await this._getDataFrom('POST', 'order', 'v1', Utilities.toRecord(order));
         }
     }
     async cancelAllOrders(): Promise<boolean> {
