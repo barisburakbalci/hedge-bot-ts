@@ -80,7 +80,7 @@ class PositionService {
             const openOrders = await this.Exchange.getOpenOrders();
             const protectionSignalOrder = openOrders.find(order => order instanceof LimitOrder) as LimitOrder;
 
-            if (protectionSignalOrder.price < this.minPrice) {
+            if (protectionSignalOrder?.price < this.minPrice) {
                 this.preserveNewPositions = false;
             }
 
