@@ -25,13 +25,17 @@ class PositionService {
     balance: number = 0;
     protectLoss: boolean = false;
     preserveNewPositions: boolean = true;
+    actionRatio: number;
+    leverage: number;
 
-    constructor(Exchange: IExchangeApi, NotificationService: TelegramBot, tradeRange: number, initialQuantity: number) {
+    constructor(Exchange: IExchangeApi, NotificationService: TelegramBot, tradeRange: number, initialQuantity: number, actionRatio: number, leverage: number) {
         this.Exchange = Exchange;
         this.tradeRange = tradeRange;
         this.initialQuantity = initialQuantity;
         this.quantity = initialQuantity;
         this.NofiticationService = NotificationService;
+        this.actionRatio = actionRatio;
+        this.leverage = leverage;
     }
 
     async run(): Promise<void> {  
@@ -65,12 +69,12 @@ class PositionService {
 
             const nextSide = this.getNextPositionSide();
 
-            if (this.position.notional / 50 > this.balance / 2) {
+            if (this.position.notional / this.leverage > this.balance / 2) {
                 await this.Exchange.cancelAllOrders();
                 if (nextSide == 'BUY') {
-                    await this.Exchange.setTPSL('SELL', this.maxPrice, Math.floor((this.maxPrice + this.minPrice) / 2));
+                    await this.Exchange.setTPSL('SELL', Math.floor((this.maxPrice + this.longActionPrice) / 2), Math.floor((this.maxPrice + this.minPrice) / 2));
                 } else {
-                    await this.Exchange.setTPSL('BUY', this.minPrice, Math.floor((this.maxPrice + this.minPrice) / 2));
+                    await this.Exchange.setTPSL('BUY', Math.floor((this.minPrice + this.shortActionPrice) / 2), Math.floor((this.maxPrice + this.minPrice) / 2));
                 }
                 
                 this.protectLoss = true;
@@ -99,8 +103,8 @@ class PositionService {
         
         const price = await this.Exchange.getMarkPrice();
 
-        this.longActionPrice    = Math.floor(price * (1 + this.tradeRange / 5));
-        this.shortActionPrice   = Math.floor(price * (1 - this.tradeRange / 5));
+        this.longActionPrice    = Math.floor(price * (1 + this.tradeRange / this.actionRatio));
+        this.shortActionPrice   = Math.floor(price * (1 - this.tradeRange / this.actionRatio));
         this.maxPrice           = Math.floor(price * (1 + this.tradeRange));
         this.minPrice           = Math.floor(price * (1 - this.tradeRange));
 

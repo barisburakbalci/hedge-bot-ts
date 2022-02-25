@@ -6,7 +6,7 @@ import Settings from './Settings';
 
 const binanceAPI = new Binance(Settings.binanceApiKey, Settings.binanceApiSecret, 'BTCUSDT', 2);
 const telegramBot = new TelegramBot(Settings.telegramToken, Settings.telegramChannel);
-const positionService = new PositionService(binanceAPI, telegramBot, Settings.tradeRange, Settings.startingQuantity);
+const positionService = new PositionService(binanceAPI, telegramBot, Settings.tradeRange, Settings.startingQuantity, Settings.actionRatio, Settings.leverage);
 let locked = false;
 console.log('-'.repeat(10), 'HedgeBot is running', '-'.repeat(10));
 
