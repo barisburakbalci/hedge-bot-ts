@@ -1,7 +1,7 @@
 import { OrderType, Side } from "../../Enums";
-import Order from "../Order";
+import IOrder from "../../interfaces/IOrder";
 
-class StopLimitOrder extends Order {
+class StopLimitOrder implements IOrder {
     side: Side;
     type: OrderType = 'STOP';
     quantity: number;
@@ -9,8 +9,6 @@ class StopLimitOrder extends Order {
     stopPrice: number;
 
     constructor(side: Side, quantity: number, price: number, stopPrice: number) {
-        super(side, 'STOP', quantity);
-
         this.side = side;
         this.quantity = quantity;
         this.price = price;

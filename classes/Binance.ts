@@ -4,8 +4,6 @@ import IExchangeApi from '../interfaces/IExchange';
 import { HttpMethod, ApiVersion, Side } from '../Enums';
 import IOrder from '../interfaces/IOrder';
 import IPosition from '../interfaces/IPosition';
-import Order from './Order';
-import Logger from './Logger';
 import IBalance from '../interfaces/IBalance';
 import Utilities from './Utilities';
 import StopMarketOrder from './Orders/StopMarketOrder';
@@ -13,6 +11,7 @@ import TakeProfitMarketOrder from './Orders/TakeProfitMarketOrder';
 import StopLossMarketOrder from './Orders/StopLossMarketOrder';
 import StopLimitOrder from './Orders/StopLimitOrder';
 import RequestService from './RequestService';
+import MarketOrder from './Orders/MarketOrder';
 
 class Binance implements IExchangeApi {
     baseURL = 'https://fapi.binance.com/fapi';
@@ -72,7 +71,7 @@ class Binance implements IExchangeApi {
         return await this._getDataFrom('POST', 'order', 'v1', Utilities.toRecord(order)) as IOrder;
     }
     async openMarketOrder(side: Side, quantity: number): Promise<IOrder> {
-        const order = new Order(side, 'MARKET', quantity);
+        const order = new MarketOrder(side, quantity);
         return await this._getDataFrom('POST', 'order', 'v1', Utilities.toRecord(order)) as IOrder;
     }
     async setTPSL(side: Side, TP: number, SL: number): Promise<void> {

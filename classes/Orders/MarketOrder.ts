@@ -1,14 +1,12 @@
 import { OrderType, Side } from "../../Enums";
-import Order from "../Order";
+import IOrder from "../../interfaces/IOrder";
 
-class MarketOrder extends Order {
+class MarketOrder implements IOrder {
     side: Side;
     type: OrderType = 'MARKET';
     quantity: number;
 
     constructor(side: Side, quantity: number) {
-        super(side, 'STOP_MARKET', quantity);
-
         this.side = side;
         this.quantity = quantity;
     }
