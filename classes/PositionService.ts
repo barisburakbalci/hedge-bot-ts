@@ -50,10 +50,10 @@ class PositionService {
                 const profit = balanceInfo.balance - this.balance;
                 this.balance = balanceInfo.balance;
 
-                this.NofiticationService.sendMessage('Realized profit: $' + profit);
+                this.NofiticationService.sendMessage('Realized profit: $' + profit + '\nBalance: $' + this.balance);
                 Logger.LogInfo('Realized profit: $' + profit);
-
-                Logger.LogInfo('-'.repeat(10) + ' HedgeBot is restarted ' + '-'.repeat(10));
+                Logger.LogInfo('Balance: ' + this.balance);
+                Logger.LogInfo('HEDGEBOT RESTARTED');
                 return;
             } else if (this.isInitialState && positionSize > 0) {
                 this.isInitialState = false;
@@ -68,8 +68,9 @@ class PositionService {
             }
 
             const nextSide = this.getNextPositionSide();
+            const positionUSDTSize = this.position.notional / this.leverage;
 
-            if (this.position.notional / this.leverage > this.balance / 2) {
+            if (positionUSDTSize > this.balance / 2.5 || positionUSDTSize > this.position.maxNotionalValue / 2.5) {
                 await this.Exchange.cancelAllOrders();
                 if (nextSide == 'BUY') {
                     await this.Exchange.setTPSL('SELL', Math.floor((this.maxPrice + this.longActionPrice) / 2), Math.floor((this.maxPrice + this.minPrice) / 2));
@@ -82,13 +83,14 @@ class PositionService {
             }
 
             const openOrders = await this.Exchange.getOpenOrders();
-            const protectionSignalOrder = openOrders.find(order => order instanceof LimitOrder) as LimitOrder;
+            const protectionSignalOrder = openOrders.find(order => order.type === 'LIMIT') as LimitOrder;
+            const openMarketOrders = openOrders.filter(o => o.type === 'STOP_MARKET');
 
             if (protectionSignalOrder?.price < this.minPrice) {
                 this.preserveNewPositions = false;
             }
 
-            if (!openOrders.length) {
+            if (!openMarketOrders.length) {
                 await this.createNextOrder(nextSide);
             }
         } else {
