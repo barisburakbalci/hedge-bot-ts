@@ -7,8 +7,6 @@ import { Side } from '../Enums';
 import LimitOrder from './Orders/LimitOrder';
 
 class PositionService {
-    Exchange: IExchangeApi;
-    NofiticationService: TelegramBot;
     longActionPrice: number = 0;
     shortActionPrice: number = 0;
     maxPrice: number = 0;
@@ -17,26 +15,21 @@ class PositionService {
     isStarted= false;
     openOrders: IOrder[] = [];
     position: IPosition = {} as IPosition;
-    tradeRange: number;
-    initialQuantity: number;
-    quantity: number;
     orderIteration = 1;
     lastSide: Side = 'SELL';
     balance: number = 0;
     protectLoss: boolean = false;
     preserveNewPositions: boolean = true;
-    actionRatio: number;
-    leverage: number;
+    quantity: number = 0;
 
-    constructor(Exchange: IExchangeApi, NotificationService: TelegramBot, tradeRange: number, initialQuantity: number, actionRatio: number, leverage: number) {
-        this.Exchange = Exchange;
-        this.tradeRange = tradeRange;
-        this.initialQuantity = initialQuantity;
-        this.quantity = initialQuantity;
-        this.NofiticationService = NotificationService;
-        this.actionRatio = actionRatio;
-        this.leverage = leverage;
-    }
+    constructor(
+        private Exchange: IExchangeApi,
+        private NotificationService: TelegramBot,
+        private tradeRange: number,
+        private initialQuantity: number,
+        private actionRatio: number,
+        private leverage: number
+    ) {}
 
     async run(): Promise<void> {  
         if (this.isStarted) {
@@ -50,7 +43,7 @@ class PositionService {
                 const profit = balanceInfo.balance - this.balance;
                 this.balance = balanceInfo.balance;
 
-                this.NofiticationService.sendMessage('Realized profit: $' + profit + '\nBalance: $' + this.balance);
+                this.NotificationService.sendMessage('Realized profit: $' + profit + '\nBalance: $' + this.balance);
                 Logger.LogInfo('Realized profit: $' + profit);
                 Logger.LogInfo('Balance: ' + this.balance);
                 Logger.LogInfo('HEDGEBOT RESTARTED');
@@ -72,10 +65,13 @@ class PositionService {
 
             if (positionUSDTSize > this.balance / 2.5 || positionUSDTSize > this.position.maxNotionalValue / 2.5) {
                 await this.Exchange.cancelAllOrders();
+                const stopLosePrice = Math.floor((this.maxPrice + this.minPrice) / 2);
                 if (nextSide == 'BUY') {
-                    await this.Exchange.setTPSL('SELL', Math.floor((this.maxPrice + this.longActionPrice) / 2), Math.floor((this.maxPrice + this.minPrice) / 2));
+                    const takeLongProfit = Math.floor((this.maxPrice + this.longActionPrice) / 2);
+                    await this.Exchange.setTPSL('SELL', takeLongProfit, stopLosePrice);
                 } else {
-                    await this.Exchange.setTPSL('BUY', Math.floor((this.minPrice + this.shortActionPrice) / 2), Math.floor((this.maxPrice + this.minPrice) / 2));
+                    const takeShortProfit = Math.floor((this.minPrice + this.shortActionPrice) / 2);
+                    await this.Exchange.setTPSL('BUY', takeShortProfit, stopLosePrice);
                 }
                 
                 this.protectLoss = true;
@@ -120,7 +116,7 @@ class PositionService {
         message += `\n<i>Range:</i> %${this.tradeRange * 200}`;
         message = message;
 
-        this.NofiticationService.sendMessage(message);
+        this.NotificationService.sendMessage(message);
 
         await this.Exchange.cancelAllOrders();
         this.quantity = this.initialQuantity;
@@ -162,7 +158,7 @@ class PositionService {
     notifyOrderCreation(): void {
         const side = this.orderIteration > 1 ? this.getNextPositionSide() : 'BOTH'
         const message = `<b>Order ${this.orderIteration}:</b> ${side} ${this.quantity} ${this.Exchange.symbol} <i>created</i>`;
-        this.NofiticationService.sendMessage(message);
+        this.NotificationService.sendMessage(message);
         Logger.LogInfo('Order ' + this.orderIteration + ' set for ' + this.quantity + ' ' + this.Exchange.symbol);
     }
 }

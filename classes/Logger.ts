@@ -16,7 +16,8 @@ class Logger {
         Logger.LogToFile(message + '\n' + JSON.stringify(data, null, 2));
     }
     static LogToFile(message: string): void {
-        const formattedText = '\n' + '-'.repeat(20) + new Date().toLocaleString() + '-'.repeat(20) + '\n' + message + '\n';
+        const dividerText = '-'.repeat(20) + new Date().toLocaleString() + '-'.repeat(20);
+        const formattedText = '\n' + dividerText + '\n' + message + '\n';
         FileSystem.appendFile('logs.txt', formattedText, err => {
             if (err) {
                 console.error('Error occured while logging to logs.txt', err);

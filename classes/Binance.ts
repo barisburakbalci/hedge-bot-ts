@@ -15,17 +15,13 @@ import MarketOrder from './Orders/MarketOrder';
 
 class Binance implements IExchangeApi {
     baseURL = 'https://fapi.binance.com/fapi';
-    apiKey: string;
-    apiSecret: string;
-    symbol: string;
-    precision: number;
 
-    constructor(apiKey: string, apiSecret: string, symbol: string, precision: number) {
-        this.apiKey = apiKey;
-        this.apiSecret = apiSecret;
-        this.symbol = symbol;
-        this.precision = precision;
-
+    constructor(
+        public apiKey: string,
+        public apiSecret: string,
+        public symbol: string,
+        public precision: number
+    ) {
         axios.defaults.headers.common['Content-Type'] = 'application/x-www-form-urlencoded';
         axios.defaults.headers.common['X-MBX-APIKEY'] = apiKey;
     }
