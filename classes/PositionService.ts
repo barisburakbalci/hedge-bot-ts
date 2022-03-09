@@ -44,8 +44,7 @@ class PositionService {
                 this.balance = balanceInfo.balance;
 
                 this.NotificationService.sendMessage('Realized profit: $' + profit + '\nBalance: $' + this.balance);
-                Logger.LogInfo('Realized profit: $' + profit);
-                Logger.LogInfo('Balance: ' + this.balance);
+                Logger.LogInfo(`Realized profit: $${profit}\nBalance: $${this.balance}`);
                 Logger.LogInfo('HEDGEBOT RESTARTED');
                 return;
             } else if (this.isInitialState && positionSize > 0) {
@@ -80,7 +79,7 @@ class PositionService {
 
             const openOrders = await this.Exchange.getOpenOrders();
             const protectionSignalOrder = openOrders.find(order => order.type === 'LIMIT') as LimitOrder;
-            const openMarketOrders = openOrders.filter(o => o.type === 'STOP_MARKET');
+            const openMarketOrders = openOrders.filter(order => order.type === 'STOP_MARKET');
 
             if (protectionSignalOrder?.price < this.minPrice) {
                 this.preserveNewPositions = false;
@@ -121,9 +120,9 @@ class PositionService {
         await this.Exchange.cancelAllOrders();
         this.quantity = this.initialQuantity;
 
-        const initialStartOrder = await this.Exchange.openMarketOrder(this.lastSide, this.quantity / 2);
+        const initialOrder = await this.Exchange.openMarketOrder(this.lastSide, this.quantity / 2);
 
-        if (initialStartOrder) {
+        if (initialOrder) {
             this.isInitialState = true;
             this.isStarted = true;
             this.orderIteration = 1;
@@ -148,7 +147,6 @@ class PositionService {
         if (order) {
             this.quantity *= 2;
             this.orderIteration++;
-            
             this.notifyOrderCreation();
         }
 
@@ -157,7 +155,8 @@ class PositionService {
 
     notifyOrderCreation(): void {
         const side = this.orderIteration > 1 ? this.getNextPositionSide() : 'BOTH'
-        const message = `<b>Order ${this.orderIteration}:</b> ${side} ${this.quantity} ${this.Exchange.symbol} <i>created</i>`;
+        let message = `<b>Order ${this.orderIteration}:</b> ${side}`;
+        message += `${this.quantity} ${this.Exchange.symbol} <i>created</i>`;
         this.NotificationService.sendMessage(message);
         Logger.LogInfo('Order ' + this.orderIteration + ' set for ' + this.quantity + ' ' + this.Exchange.symbol);
     }
