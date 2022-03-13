@@ -29,7 +29,9 @@ class PositionService {
         private initialQuantity: number,
         private actionRatio: number,
         private leverage: number
-    ) {}
+    ) {
+        this.start();
+    }
 
     async run(): Promise<void> {  
         if (this.isStarted) {
@@ -37,22 +39,9 @@ class PositionService {
             const positionSize = Math.abs(this.position.positionAmt);
 
             if (!this.isInitialState && positionSize == 0) {
-                this.isStarted = false;
-
-                const balanceInfo = await this.Exchange.getBalance();
-                const profit = balanceInfo.balance - this.balance;
-                this.balance = balanceInfo.balance;
-
-                this.NotificationService.sendMessage('Realized profit: $' + profit + '\nBalance: $' + this.balance);
-                Logger.LogInfo(`Realized profit: $${profit}\nBalance: $${this.balance}`);
-                Logger.LogInfo('HEDGEBOT RESTARTED');
-                return;
+                return this.restart();
             } else if (this.isInitialState && positionSize > 0) {
-                this.isInitialState = false;
-                await this.Exchange.setTPSL('BUY', this.minPrice, this.maxPrice);
-                await this.Exchange.setTPSL('SELL', this.maxPrice, this.minPrice);
-                const balanceInfo = await this.Exchange.getBalance();
-                this.balance = balanceInfo.balance;
+                await this.setTPSL();
             }
 
             if (this.protectLoss) {
@@ -64,14 +53,7 @@ class PositionService {
 
             if (positionUSDTSize > this.balance / 2.5 || positionUSDTSize > this.position.maxNotionalValue / 2.5) {
                 await this.Exchange.cancelAllOrders();
-                const stopLosePrice = Math.floor((this.maxPrice + this.minPrice) / 2);
-                if (nextSide == 'BUY') {
-                    const takeLongProfit = Math.floor((this.maxPrice + this.longActionPrice) / 2);
-                    await this.Exchange.setTPSL('SELL', takeLongProfit, stopLosePrice);
-                } else {
-                    const takeShortProfit = Math.floor((this.minPrice + this.shortActionPrice) / 2);
-                    await this.Exchange.setTPSL('BUY', takeShortProfit, stopLosePrice);
-                }
+                await this.updateTPSL(nextSide);
                 
                 this.protectLoss = true;
                 return;
@@ -81,19 +63,50 @@ class PositionService {
             const protectionSignalOrder = openOrders.find(order => order.type === 'LIMIT') as LimitOrder;
             const openMarketOrders = openOrders.filter(order => order.type === 'STOP_MARKET');
 
-            if (protectionSignalOrder?.price < this.minPrice) {
+            if (protectionSignalOrder.price < this.minPrice) {
                 this.preserveNewPositions = false;
             }
 
             if (!openMarketOrders.length) {
-                await this.createNextOrder(nextSide);
+                await this.increase(nextSide);
             }
         } else {
-            await this.setPositionRange();
+            await this.start();
         }
     }
 
-    async setPositionRange(): Promise<void> {
+    async restart() {
+        this.isStarted = false;
+
+        const balanceInfo = await this.Exchange.getBalance();
+        const profit = balanceInfo.balance - this.balance;
+        this.balance = balanceInfo.balance;
+
+        this.NotificationService.sendMessage('Realized profit: $' + profit + '\nBalance: $' + this.balance);
+        Logger.LogInfo(`Realized profit: $${profit}\nBalance: $${this.balance}`);
+        Logger.LogInfo('HEDGEBOT RESTARTED');
+    }
+
+    async setTPSL() {
+        this.isInitialState = false;
+        await this.Exchange.setTPSL('BUY', this.minPrice, this.maxPrice);
+        await this.Exchange.setTPSL('SELL', this.maxPrice, this.minPrice);
+        const balanceInfo = await this.Exchange.getBalance();
+        this.balance = balanceInfo.balance;
+    }
+
+    async updateTPSL(nextSide: Side) {
+        const stopLossPrice = Math.floor((this.maxPrice + this.minPrice) / 2);
+        if (nextSide == 'BUY') {
+            const takeLongProfit = Math.floor((this.maxPrice + this.longActionPrice) / 2);
+            await this.Exchange.setTPSL('SELL', takeLongProfit, stopLossPrice);
+        } else {
+            const takeShortProfit = Math.floor((this.minPrice + this.shortActionPrice) / 2);
+            await this.Exchange.setTPSL('BUY', takeShortProfit, stopLossPrice);
+        }
+    }
+
+    async start(): Promise<void> {
         if (!this.preserveNewPositions) {
             process.exit(1);
         }
@@ -105,18 +118,6 @@ class PositionService {
         this.maxPrice           = Math.floor(price * (1 + this.tradeRange));
         this.minPrice           = Math.floor(price * (1 - this.tradeRange));
 
-        Logger.LogInfo(`Initial orders were set with amount: ${this.initialQuantity / 2} ${this.Exchange.symbol}`);
-        let message = `${this.Exchange.symbol} <b>${price}</b>`;
-        message += '\nInitail orders set for:';
-        message += `\n<i>BuyAt:</i> ${this.longActionPrice}`;
-        message += `\n<i>SellAt:</i> ${this.shortActionPrice}`;
-        message += `\n<i>UpLimit:</i> ${this.maxPrice}`;
-        message += `\n<i>DownLimit:</i> ${this.minPrice}`;
-        message += `\n<i>Range:</i> %${this.tradeRange * 200}`;
-        message = message;
-
-        this.NotificationService.sendMessage(message);
-
         await this.Exchange.cancelAllOrders();
         this.quantity = this.initialQuantity;
 
@@ -127,6 +128,19 @@ class PositionService {
             this.isStarted = true;
             this.orderIteration = 1;
             this.protectLoss = false;
+
+            let message = `${this.Exchange.symbol} <b>${price}</b>`;
+            message += '\nInitail orders set for:';
+            message += `\n<i>BuyAt:</i> ${this.longActionPrice}`;
+            message += `\n<i>SellAt:</i> ${this.shortActionPrice}`;
+            message += `\n<i>UpLimit:</i> ${this.maxPrice}`;
+            message += `\n<i>DownLimit:</i> ${this.minPrice}`;
+            message += `\n<i>Range:</i> %${this.tradeRange * 200}`;
+            
+            Logger.LogInfo(message);
+            this.NotificationService.sendMessage(message);
+        } else {
+            Logger.LogInfo('Bot could not started');
         }
     }
 
@@ -140,7 +154,7 @@ class PositionService {
         return this.lastSide;
     }
 
-    async createNextOrder(side: Side): Promise<IOrder> {
+    async increase(side: Side): Promise<IOrder> {
         const actionPrice = side === 'BUY' ? this.longActionPrice : this.shortActionPrice;
         const order = await this.Exchange.openStopMarketOrder(side, this.quantity * 2, actionPrice);
         
