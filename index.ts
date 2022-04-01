@@ -4,9 +4,9 @@ import PositionService from './classes/PositionService';
 import TelegramBot from './classes/TelegramBot';
 import Settings from './Settings';
 
-const binanceAPI = new Binance(Settings.binanceApiKey, Settings.binanceApiSecret, 'BTCUSDT', 2);
-const telegramBot = new TelegramBot(Settings.telegramToken, Settings.telegramChannel);
-const positionService = new PositionService(binanceAPI, telegramBot, Settings.tradeRange, Settings.startingQuantity, Settings.actionRatio, Settings.leverage);
+const binanceAPI = new Binance(Settings.binance.key, Settings.binance.secret, 'BTCUSDT', 2);
+const telegramBot = new TelegramBot(Settings.telegram.token, Settings.telegram.channel);
+const positionService = new PositionService(binanceAPI, telegramBot, Settings.app.tradeRange, Settings.app.startingQuantity, Settings.app.actionRatio, Settings.app.leverage);
 let locked = false;
 console.log('-'.repeat(10), 'HedgeBot is running', '-'.repeat(10));
 

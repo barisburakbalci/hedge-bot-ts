@@ -5,6 +5,7 @@ import IOrder from '../interfaces/IOrder';
 import IPosition from '../interfaces/IPosition';
 import { Side } from '../Enums';
 import LimitOrder from './Orders/LimitOrder';
+import StopMarketOrder from './Orders/StopMarketOrder';
 
 class PositionService {
     longActionPrice: number = 0;
@@ -48,10 +49,11 @@ class PositionService {
                 return;
             }
 
+            const balanceInfo = await this.Exchange.getBalance();
             const nextSide = this.getNextPositionSide();
             const positionUSDTSize = this.position.notional / this.leverage;
 
-            if (positionUSDTSize > this.balance / 2.5 || positionUSDTSize > this.position.maxNotionalValue / 2.5) {
+            if (positionUSDTSize > balanceInfo.balance / 2.5 || this.position.notional > this.position.maxNotionalValue / 2.5) {
                 await this.Exchange.cancelAllOrders();
                 await this.updateTPSL(nextSide);
                 
@@ -61,9 +63,9 @@ class PositionService {
 
             const openOrders = await this.Exchange.getOpenOrders();
             const protectionSignalOrder = openOrders.find(order => order.type === 'LIMIT') as LimitOrder;
-            const openMarketOrders = openOrders.filter(order => order.type === 'STOP_MARKET');
+            const openMarketOrders = openOrders.filter(order => order.type === 'STOP_MARKET') as StopMarketOrder[];
 
-            if (protectionSignalOrder.price < this.minPrice) {
+            if (protectionSignalOrder?.price < this.minPrice) {
                 this.preserveNewPositions = false;
             }
 
