@@ -98,13 +98,15 @@ class PositionService {
     }
 
     async updateTPSL(nextSide: Side) {
+        Logger.LogInfo('Proctect loss activated');
+        this.NotificationService.sendMessage('Proctect loss activated');
         const stopLossPrice = Math.floor((this.maxPrice + this.minPrice) / 2);
         if (nextSide == 'BUY') {
-            const takeLongProfit = Math.floor((this.maxPrice + this.longActionPrice) / 2);
-            await this.Exchange.setTPSL('SELL', takeLongProfit, stopLossPrice);
-        } else {
             const takeShortProfit = Math.floor((this.minPrice + this.shortActionPrice) / 2);
             await this.Exchange.setTPSL('BUY', takeShortProfit, stopLossPrice);
+        } else {
+            const takeLongProfit = Math.floor((this.maxPrice + this.longActionPrice) / 2);
+            await this.Exchange.setTPSL('SELL', takeLongProfit, stopLossPrice);
         }
     }
 
