@@ -31,7 +31,34 @@ class PositionService {
         private actionRatio: number,
         private leverage: number
     ) {
-        this.start();
+        //this.start();
+    }
+
+    async respondHooks(symbol: string, price: number, side: Side) {
+        this.Exchange.symbol = symbol;
+        this.position = await this.Exchange.getPosition();
+        let orderSizeAsPercentage: number = 0.25;
+        let currentSide: Side = 'SELL';
+
+        if (this.position.positionAmt != 0) {
+            orderSizeAsPercentage = orderSizeAsPercentage * 2;
+            currentSide = this.position.positionAmt > 0 ? 'BUY' : 'SELL';
+        }
+
+        if (currentSide == side) {
+            this.NotificationService.sendMessage(symbol + ' gereksiz tekrar: ' + price);
+            return;
+        }
+
+        
+        const balanceInfo = await this.Exchange.getBalance();
+        const profit = balanceInfo.balance - this.balance;
+        this.balance = balanceInfo.balance;
+        
+        // Rounding only works for AVAX
+        const quantity = Math.floor((this.balance * orderSizeAsPercentage * 5) / price);
+        this.NotificationService.sendMessage(`${quantity} adet ${symbol} - ${price} fiyattan ${side}`);
+        this.Exchange.openMarketOrder(side, quantity);
     }
 
     async run(): Promise<void> {  
