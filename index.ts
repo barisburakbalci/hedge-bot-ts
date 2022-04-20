@@ -37,6 +37,10 @@ app.use(bodyParser.text())
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+app.get('/', (req: Request, res: Response) => {
+    res.send('API Welcome');
+});
+
 app.post('/', (req: Request, res: Response) => {
     const [ currency, price, side ] = req.body.split(' ');
     positionService.respondHooks(currency, price, side);
