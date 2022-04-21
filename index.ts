@@ -28,10 +28,10 @@ async function runHedgeBot() {
 //setInterval(runHedgeBot, 10000);
 
 import express, { Express, Request, Response } from 'express';
+import bodyParser from 'body-parser';
 
 const app: Express = express();
 const port = 80;
-const bodyParser = require('body-parser');
 
 app.use(bodyParser.text())
 app.use(bodyParser.json());
@@ -45,6 +45,7 @@ app.post('/', (req: Request, res: Response) => {
     const [ currency, price, side, token ] = req.body.split(' ');
     if (token != '13579bbb$') {
         res.send('You are not authorized to view this page');
+        return;
     }
     try {
         console.log(`Responding hook for ${currency}:${side}:${price}`);
