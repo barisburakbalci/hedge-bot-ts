@@ -46,7 +46,12 @@ app.post('/', (req: Request, res: Response) => {
     if (token != '13579bbb$') {
         res.send('You are not authorized to view this page');
     }
-    positionService.respondHooks(currency, price, side);
+    try {
+        console.log(`Responding hook for ${currency}:${side}:${price}`);
+        positionService.respondHooks(currency, price, side);
+    } catch (err) {
+        console.error(err);
+    }
     res.send(currency + price);
 });
 
