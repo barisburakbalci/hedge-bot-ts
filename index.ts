@@ -42,7 +42,10 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 app.post('/', (req: Request, res: Response) => {
-    const [ currency, price, side ] = req.body.split(' ');
+    const [ currency, price, side, token ] = req.body.split(' ');
+    if (token != '13579bbb$') {
+        res.send('You are not authorized to view this page');
+    }
     positionService.respondHooks(currency, price, side);
     res.send(currency + price);
 });
