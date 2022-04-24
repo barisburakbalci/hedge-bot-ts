@@ -6,6 +6,7 @@ import IPosition from '../interfaces/IPosition';
 import { Side } from '../Enums';
 import LimitOrder from './Orders/LimitOrder';
 import StopMarketOrder from './Orders/StopMarketOrder';
+import Settings from '../Settings';
 
 class PositionService {
     longActionPrice: number = 0;
@@ -57,12 +58,16 @@ class PositionService {
         this.balance = balanceInfo.balance;
         
         // Rounding only works for AVAX
-        const quantity = Math.floor((this.balance * orderSizeAsPercentage * 5) / price);
+        const quantity = Number(((this.balance * orderSizeAsPercentage * 5) / price).toFixed(2));
         this.NotificationService.sendMessage(`${quantity} adet ${symbol} - ${price} fiyattan ${side}`);
         this.Exchange.openMarketOrder(side, quantity);
         
         // TP SL may be required in next phases
-        //this.Exchange.setTPSL();
+        const tpRatio: number = side == 'BUY' ? 1 + Number((Settings.app.TP / 100).toFixed(2)) : 1 - Number((Settings.app.TP / 100).toFixed(2));
+        const spRatio: number = side == 'BUY' ? 1 - Number((Settings.app.SL / 100).toFixed(2)) : 1 + Number((Settings.app.SL / 100).toFixed(2));
+        const TP = Number((price * tpRatio).toFixed(2));
+        const SL = Number((price * spRatio).toFixed(2));
+        this.Exchange.setTPSL(side, TP, SL);
     }
 
     async run(): Promise<void> {  
