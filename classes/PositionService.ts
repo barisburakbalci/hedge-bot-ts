@@ -58,7 +58,7 @@ class PositionService {
         this.balance = balanceInfo.balance;
         
         // Rounding only works for AVAX
-        const quantity = Number(((this.balance * orderSizeAsPercentage * 5) / price).toFixed(2));
+        const quantity = Math.floor((this.balance * orderSizeAsPercentage * 5) / price);
         this.NotificationService.sendMessage(`${quantity} adet ${symbol} - ${price} fiyattan ${side}`);
         this.Exchange.openMarketOrder(side, quantity);
         
