@@ -3,7 +3,12 @@ import { HttpMethod } from "../Enums";
 
 class RequestService {
     public static async Send(method: HttpMethod, URL: string) {
-        return await this[method](URL);
+        try {
+            return await this[method](URL);
+        } catch (error: any) {
+            console.error("---- REQUEST ERROR ----");
+            console.error(URL)
+        }
     }
     public static async GET(URL: string) {
         return await axios.get(URL);

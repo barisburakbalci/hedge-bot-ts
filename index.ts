@@ -51,6 +51,7 @@ app.post('/', (req: Request, res: Response) => {
         console.log(`Responding hook for ${currency}:${side}:${price}`);
         positionService.respondHooks(currency, price, side);
     } catch (err) {
+        console.error("----- ERROR -----");
         console.error(err);
     }
     res.send(currency + price);
