@@ -5,7 +5,7 @@ import TelegramBot from './classes/TelegramBot';
 import Settings from './Settings';
 import { Side } from './Enums';
 
-const binanceAPI = new Binance(Settings.binance.key, Settings.binance.secret, 'BTCUSDT', 2);
+const binanceAPI = new Binance(Settings.binance.key, Settings.binance.secret, Settings.app.symbol, Settings.app.precision);
 const telegramBot = new TelegramBot(Settings.telegram.token, Settings.telegram.channel);
 const positionService = new PositionService(binanceAPI, telegramBot, Settings.app.tradeRange, Settings.app.startingQuantity, Settings.app.actionRatio, Settings.app.leverage);
 let locked = false;
