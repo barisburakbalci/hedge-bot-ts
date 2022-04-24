@@ -7,7 +7,8 @@ class RequestService {
             return await this[method](URL);
         } catch (error: any) {
             console.error("---- REQUEST ERROR ----");
-            console.error(URL)
+            console.error(URL);
+            throw new Error("Request Error");
         }
     }
     public static async GET(URL: string) {
