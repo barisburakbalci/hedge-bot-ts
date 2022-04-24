@@ -67,7 +67,7 @@ class PositionService {
         const spRatio: number = side == 'BUY' ? 1 - Number((Settings.app.SL / 100).toFixed(2)) : 1 + Number((Settings.app.SL / 100).toFixed(2));
         const TP = Number((price * tpRatio).toFixed(2));
         const SL = Number((price * spRatio).toFixed(2));
-        this.Exchange.setTPSL(side, TP, SL);
+        this.Exchange.setTPSL(side == 'BUY' ? 'SELL' : 'BUY', TP, SL);
     }
 
     async run(): Promise<void> {  
