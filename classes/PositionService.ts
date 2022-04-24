@@ -46,7 +46,8 @@ class PositionService {
         }
 
         if (currentSide == side) {
-            this.NotificationService.sendMessage(symbol + ' gereksiz tekrar: ' + price);
+            //this.NotificationService.sendMessage(symbol + ' gereksiz tekrar: ' + price);
+            Logger.LogInfo("Gereksiz tekrar " + symbol + " " + price);
             return;
         }
 
@@ -59,6 +60,9 @@ class PositionService {
         const quantity = Math.floor((this.balance * orderSizeAsPercentage * 5) / price);
         this.NotificationService.sendMessage(`${quantity} adet ${symbol} - ${price} fiyattan ${side}`);
         this.Exchange.openMarketOrder(side, quantity);
+        
+        // TP SL may be required in next phases
+        //this.Exchange.setTPSL();
     }
 
     async run(): Promise<void> {  
