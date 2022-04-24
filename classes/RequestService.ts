@@ -8,6 +8,8 @@ class RequestService {
         } catch (error: any) {
             console.error("---- REQUEST ERROR ----");
             console.error(URL);
+            console.error("Binance Message:", error?.response?.data?.msg, error);
+            console.error(error);
             throw new Error("Request Error");
         }
     }
