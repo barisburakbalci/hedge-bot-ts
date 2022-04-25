@@ -39,12 +39,7 @@ class PositionService {
         this.Exchange.symbol = symbol;
         this.position = await this.Exchange.getPosition();
         let orderSizeAsPercentage: number = 0.25;
-        let currentSide: Side = 'SELL';
-
-        if (this.position.positionAmt != 0) {
-            orderSizeAsPercentage = orderSizeAsPercentage * 2;
-            currentSide = this.position.positionAmt > 0 ? 'BUY' : 'SELL';
-        }
+        let currentSide: Side = this.position.positionAmt > 0 ? 'BUY' : 'SELL';
 
         if (currentSide == side) {
             //this.NotificationService.sendMessage(symbol + ' gereksiz tekrar: ' + price);
@@ -58,11 +53,22 @@ class PositionService {
         this.balance = balanceInfo.balance;
         
         // Rounding only works for AVAX
-        const quantity = Math.floor((this.balance * orderSizeAsPercentage * 5) / price);
+        let quantity = Math.floor((this.balance * orderSizeAsPercentage * Settings.app.leverage) / price);
+
+        if (this.position.positionAmt != 0) {
+            quantity = Math.floor((this.position.notional * 2) / price);
+        }
+
+        Logger.LogInfo(`${quantity} adet ${symbol} - ${price} fiyattan ${side}`);
         this.NotificationService.sendMessage(`${quantity} adet ${symbol} - ${price} fiyattan ${side}`);
         this.Exchange.openMarketOrder(side, quantity);
-        
-        // TP SL may be required in next phases
+
+        setTimeout(() => this.TPSL(side, price), 2500);
+    }
+
+    async TPSL(side: Side, price: number) {
+        this.Exchange.cancelAllOrders();
+
         const tpRatio: number = side == 'BUY' ? 1 + Number((Settings.app.TP / 100).toFixed(2)) : 1 - Number((Settings.app.TP / 100).toFixed(2));
         const spRatio: number = side == 'BUY' ? 1 - Number((Settings.app.SL / 100).toFixed(2)) : 1 + Number((Settings.app.SL / 100).toFixed(2));
         const TP = Number((price * tpRatio).toFixed(2));
