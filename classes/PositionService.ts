@@ -41,7 +41,7 @@ class PositionService {
         let orderSizeAsPercentage: number = 0.25;
         let currentSide: Side = this.position.positionAmt > 0 ? 'BUY' : 'SELL';
 
-        if (currentSide == side) {
+        if (this.position.positionAmt != 0 && currentSide == side) {
             //this.NotificationService.sendMessage(symbol + ' gereksiz tekrar: ' + price);
             Logger.LogInfo("Gereksiz tekrar " + symbol + " " + price);
             return;
@@ -56,7 +56,7 @@ class PositionService {
         let quantity = Math.floor((this.balance * orderSizeAsPercentage * Settings.app.leverage) / price);
 
         if (this.position.positionAmt != 0) {
-            quantity = Math.floor((this.position.notional * 2) / price);
+            quantity = Math.floor((Math.abs(this.position.notional) * 2) / price);
         }
 
         Logger.LogInfo(`${quantity} adet ${symbol} - ${price} fiyattan ${side}`);
