@@ -68,7 +68,7 @@ class PositionService {
 
     async TPSL(side: Side, price: number) {
         try {
-            this.Exchange.cancelAllOrders();
+            await this.Exchange.cancelAllOrders();
 
             const tpRatio: number = side == 'BUY' ? 1 + Number((Settings.app.TP / 100).toFixed(2)) : 1 - Number((Settings.app.TP / 100).toFixed(2));
             const spRatio: number = side == 'BUY' ? 1 - Number((Settings.app.SL / 100).toFixed(2)) : 1 + Number((Settings.app.SL / 100).toFixed(2));
