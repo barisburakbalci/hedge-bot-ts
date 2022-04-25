@@ -67,13 +67,23 @@ class PositionService {
     }
 
     async TPSL(side: Side, price: number) {
-        this.Exchange.cancelAllOrders();
+        try {
+            this.Exchange.cancelAllOrders();
 
-        const tpRatio: number = side == 'BUY' ? 1 + Number((Settings.app.TP / 100).toFixed(2)) : 1 - Number((Settings.app.TP / 100).toFixed(2));
-        const spRatio: number = side == 'BUY' ? 1 - Number((Settings.app.SL / 100).toFixed(2)) : 1 + Number((Settings.app.SL / 100).toFixed(2));
-        const TP = Number((price * tpRatio).toFixed(2));
-        const SL = Number((price * spRatio).toFixed(2));
-        this.Exchange.setTPSL(side == 'BUY' ? 'SELL' : 'BUY', TP, SL);
+            const tpRatio: number = side == 'BUY' ? 1 + Number((Settings.app.TP / 100).toFixed(2)) : 1 - Number((Settings.app.TP / 100).toFixed(2));
+            const spRatio: number = side == 'BUY' ? 1 - Number((Settings.app.SL / 100).toFixed(2)) : 1 + Number((Settings.app.SL / 100).toFixed(2));
+            const TP = Number((price * tpRatio).toFixed(2));
+            const SL = Number((price * spRatio).toFixed(2));
+            this.Exchange.setTPSL(side == 'BUY' ? 'SELL' : 'BUY', TP, SL);
+        } catch(error: any) {
+            console.error("---- TPSL ERROR ----");
+            console.error(URL);
+            console.error("Binance Message:", error?.response?.data?.msg, error);
+            if (!error?.response?.data?.msg) {
+                console.error(error);
+            }
+            throw new Error("Request Error");
+        }
     }
 
     async run(): Promise<void> {  
